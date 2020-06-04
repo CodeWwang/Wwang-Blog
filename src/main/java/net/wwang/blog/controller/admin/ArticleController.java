@@ -1,0 +1,195 @@
+package net.wwang.blog.controller.admin;
+
+import net.wwang.blog.constant.Types;
+import net.wwang.blog.constant.WebConst;
+import net.wwang.blog.enums.LogEnum;
+import net.wwang.blog.model.Content;
+import net.wwang.blog.model.Log;
+import net.wwang.blog.model.Meta;
+import net.wwang.blog.model.User;
+import net.wwang.blog.service.ContentService;
+import net.wwang.blog.service.LogService;
+import net.wwang.blog.service.MetaService;
+import net.wwang.blog.utils.APIResponse;
+import net.wwang.blog.utils.Commons;
+import net.wwang.blog.utils.DateUtil;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.*;
+
+import javax.servlet.http.HttpServletRequest;
+import java.util.List;
+
+@Controller
+@RequestMapping("/admin/article")
+public class ArticleController {
+    @Autowired
+    private MetaService metaService;
+    @Autowired
+    private ContentService contentService;
+    @Autowired
+    private LogService logService;
+
+    /**
+     * 文章管理主页面
+     *
+     * @param pageNo
+     * @param pageSize
+     * @param request
+     * @return
+     */
+    @GetMapping("")
+    public String index(@RequestParam(value = "pageNo", defaultValue = "0", required = false) Integer pageNo,
+                        @RequestParam(value = "pageSize", defaultValue = "5", required = false) Integer pageSize,
+                        HttpServletRequest request) {
+        Pageable pageable = PageRequest.of(pageNo, pageSize);
+        Page<Content> articles = contentService.getAllArticles(pageable);
+        request.setAttribute("articles", articles);
+        return "admin/article_list";
+    }
+
+    /**
+     * 发布文章页面
+     *
+     * @param request
+     * @return
+     */
+    @GetMapping(value = "/publish")
+    public String newArticle(HttpServletRequest request) {
+        List<Meta> categories = metaService.getMetasByType(Types.CATEGORY.getType());
+        request.setAttribute("categories", categories);
+        return "admin/article_edit";
+    }
+
+    /**
+     * 文章编辑页面
+     *
+     * @param cid
+     * @param request
+     * @return
+     */
+    @GetMapping(value = "/{cid}")
+    public String editArticle(@PathVariable(value = "cid", required = true) Integer cid,
+                              HttpServletRequest request) {
+        Content content = contentService.getArticleById(cid);
+        List<Meta> categories = metaService.getMetasByType(Types.CATEGORY.getType());
+        request.setAttribute("contents", content);
+        request.setAttribute("categories", categories);
+        request.setAttribute("active", "article");
+        return "admin/article_edit";
+    }
+
+    /**
+     * 修改文章
+     * @param cid
+     * @param title
+     * @param titlePic
+     * @param slug
+     * @param content
+     * @param type
+     * @param status
+     * @param tags
+     * @param categories
+     * @param allowComment
+     * @return
+     */
+    @PostMapping("/modify")
+    @ResponseBody
+    public APIResponse modifyArticle(@RequestParam(name = "cid", required = true) Integer cid,
+                                     @RequestParam(name = "title", required = true) String title,
+                                     @RequestParam(name = "titlePic", required = false) String titlePic,
+                                     @RequestParam(name = "slug", required = false) String slug,
+                                     @RequestParam(name = "content", required = true) String content,
+                                     @RequestParam(name = "type", required = true) String type,
+                                     @RequestParam(name = "status", required = true) String status,
+                                     @RequestParam(name = "tags", required = false) String tags,
+                                     @RequestParam(name = "categories", required = false, defaultValue = "默认分类") String categories,
+                                     @RequestParam(name = "allowComment", required = true) Boolean allowComment) {
+        try{
+            Content article = contentService.getArticleById(cid);
+            article.setTitle(title);
+            article.setCid(cid);
+            article.setSlug(slug);
+            article.setContent(content);
+            article.setModified(DateUtil.getCurrentUnixTime());
+            article.setType(type);
+            article.setStatus(status);
+            article.setTags(tags);
+            article.setCategories(categories);
+            article.setAllowComment(allowComment ? 1 : 0);
+            //更新文章
+            contentService.saveContent(article);
+        }catch (InternalError e){
+            return APIResponse.failure(e.getMessage());
+        }
+        return APIResponse.success();
+    }
+
+    /**
+     * 发布文章
+     * @param title
+     * @param titlePic
+     * @param slug
+     * @param content
+     * @param type
+     * @param status
+     * @param categories
+     * @param tags
+     * @param allowComment
+     * @return
+     */
+    @PostMapping(value = "/publish")
+    @ResponseBody
+    public APIResponse publishArticle(@RequestParam(name = "title", required = true) String title,
+                                      @RequestParam(name = "titlePic", required = false) String titlePic,
+                                      @RequestParam(name = "slug", required = false) String slug,
+                                      @RequestParam(name = "content", required = true) String content,
+                                      @RequestParam(name = "type", required = true) String type,
+                                      @RequestParam(name = "status", required = true) String status,
+                                      @RequestParam(name = "categories", required = false, defaultValue = "默认分类") String categories,
+                                      @RequestParam(name = "tags", required = false) String tags,
+                                      @RequestParam(name = "allowComment", required = true) Boolean allowComment) {
+        try{
+            Content article = new Content();
+            article.setTitle(title);
+            article.setSlug(slug);
+            article.setContent(content);
+            article.setCreated(DateUtil.getCurrentUnixTime());
+            article.setModified(DateUtil.getCurrentUnixTime());
+            article.setType(type);
+            article.setStatus(status);
+            article.setHits(1);
+            article.setCommentsNum(0);
+            // 只允许博客文章有分类，防止作品被收入分类
+            article.setTags(type.equals(Types.ARTICLE.getType()) ? tags : null);
+            article.setCategories(type.equals(Types.ARTICLE.getType()) ? categories : null);
+            article.setAllowComment(allowComment ? 1 : 0);
+
+            System.out.println(article.toString());
+            // 添加文章
+            contentService.saveContent(article);
+        }catch (InternalError e){
+            return APIResponse.failure(e.getMessage());
+        }
+
+        return APIResponse.success();
+    }
+
+    @PostMapping("/delete")
+    @ResponseBody
+    public APIResponse deleteArticle(@RequestParam(name = "cid", required = true) Integer cid,
+                                     HttpServletRequest request
+    ) {
+        // 删除文章
+        contentService.deleteArticleById(cid);
+        // 写入日志
+        User user = (User) request.getSession().getAttribute(WebConst.LOGIN_SESSION_KEY);
+        Log log = Commons.newLog(LogEnum.DEL_ARTICLE.getAction(),""+cid,user.getUid(),request);
+        logService.insertLog(log);
+        return APIResponse.success();
+    }
+
+}

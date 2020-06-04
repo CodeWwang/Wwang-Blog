@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<body>
+<footer id="footer" class="footer" th:fragment="footer(record)">
+    <div class="footer-inner">
+        <div class="copyright">
+            ©<span>2020</span> <span class="with-love">
+                <i class="fa fa-heart"></i></span> <span class="author">Wangwei</span>
+        </div>
+        <div>
+            <th:block th:if="${record != null and record != ''}">
+                <a th:text="${record}" th:href="@{http://www.beian.miit.gov.cn/}"></a>
+            </th:block>
+        </div>
+    </div>
+</footer>
+</body>
+</html>

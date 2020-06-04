@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<body>
+<ol class="page-navigator" th:fragment="pageNav(pageInfo, prevText, nextText, prefix)">
+    <th:block th:if="${pageInfo.hasPreviousPage}">
+        <li class="prev">
+            <a th:href="@{'/'+${prefix}+'/'+${pageInfo.prePage}}" th:text="${prevText}"></a>
+        </li>
+    </th:block>
+
+
+    <th:block th:each="navIndex :${ pageInfo.navigatepageNums}">
+        <li th:class="${pageInfo.pageNum==navIndex}?'current':''">
+            <a th:href="@{'?'+${prefix}+'='+ ${navIndex}}" th:text="${navIndex}"></a>
+        </li>
+    </th:block>
+
+
+    <th:block th:if="${pageInfo.hasNextPage}">
+        <li class="next">
+            <a th:href="@{'/'+${prefix}+'/'+${pageInfo.nextPage}}" th:text="${nextText}"></a>
+        </li>
+    </th:block>
+
+</ol>
+
+<div th:fragment="pageAdminNav(pageInfo)">
+    <div class="clearfix">
+        <ul class="pagination m-b-5 pull-right">
+
+            <th:block th:if="${pageInfo.getNumber() != 0}">
+                <li>
+                    <a th:href="@{'?pageNo='+${0}}">首页</a>
+                </li>
+            </th:block>
+
+            <!--上一页-->
+            <li th:if="${pageInfo.hasPrevious()}">
+                <a th:href="@{'?pageNo='+${pageInfo.getNumber()-1}}" aria-label="Previous">
+                    <i class="fa fa-angle-left"></i>&nbsp;上一页
+                </a>
+            </li>
+
+            <!--页码数字-->
+            <!--通过遍历0到n-1获得每个页并进行判断是否为当前页-->
+            <th:block th:each="nav : ${#numbers.sequence(0,pageInfo.getTotalPages()-1)}">
+                <li th:class="${nav==pageInfo.getNumber()}?'active disabled':''">
+                    <a th:href="@{'?pageNo='+${nav}}" th:text="${nav+1}"></a>
+                </li>
+            </th:block>
+
+            <!--下一页-->
+            <th:block th:if="${pageInfo.hasNext()}">
+                <li>
+                    <a th:href="@{'?pageNo='+${pageInfo.getNumber()+1}}" aria-label="Next">
+                        下一页&nbsp;<i class="fa fa-angle-right"></i>
+                    </a>
+                </li>
+            </th:block>
+
+            <th:block th:if="${pageInfo.getTotalPages()-1 != pageInfo.getNumber()}">
+                <li>
+                    <a th:href="@{'?pageNo='+${pageInfo.getTotalPages()-1}}">最后一页</a>
+                </li>
+            </th:block>
+
+            <li>
+                <span th:text="'共'+${pageInfo.getTotalPages()}+'页'"></span>
+            </li>
+        </ul>
+    </div>
+</div>
+
+</body>
+</html>
