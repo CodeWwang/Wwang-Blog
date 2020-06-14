@@ -38,7 +38,7 @@ public class WebConst {
     /**
      * 文章内容最多可以输入的文字个数
      */
-    public static final int MAX_CONTENT_COUNT = 20000;
+    public static final int MAX_CONTENT_COUNT = 100000;
 
     /**
      * 两次评论间间隔(s)
