@@ -24,3 +24,11 @@ hs_err_pid*
 
 .idea/*
 *.iml
+
+mvnw
+mvnw.cmd
+.mvn/*
+HELP.md
+target/*
+src/test/*
+
